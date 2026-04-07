@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAKA PVC - V14 STABLE</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --main-color: #ef4444; --bg-color: #050505; }
+        body { font-family: 'Rajdhani', sans-serif; background-color: var(--bg-color); color: #f8fafc; min-height: 100vh; background-image: linear-gradient(rgba(0,0,0,0.92), rgba(0,0,0,0.92)), url('https://images.alphacoders.com/599/599389.jpg'); background-size: cover; background-attachment: fixed; }
+        .header-font { font-family: 'Orbitron', sans-serif; }
+        .neon-text { color: var(--main-color); text-shadow: 0 0 10px var(--main-color); }
+        .dynamic-border { border-color: var(--main-color) !important; }
+        .dynamic-bg { background-color: var(--main-color) !important; }
+        .glass { backdrop-filter: blur(10px); background: rgba(10, 10, 10, 0.8); border: 1px solid rgba(255,255,255,0.05); }
+        .anime-card { transition: 0.3s; background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.1); clip-path: polygon(0% 0%, 95% 0%, 100% 10%, 100% 100%, 5% 100%, 0% 90%); }
+        .anime-card:hover { border-color: var(--main-color); transform: scale(1.02); }
+        #admin-modal { display: none; position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,0.9); backdrop-filter: blur(15px); }
+        @media print { .no-print { display: none !important; } .print-only { display: block !important; } }
+        .print-only { display: none; width: 58mm; padding: 2mm; font-family: 'Courier New', monospace; font-size: 10px; color: black; background: white; }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div id="admin-modal" class="flex items-center justify-center p-4 no-print">
+        <div class="glass w-full max-w-md p-8 border-l-8 dynamic-border rounded-r-2xl shadow-2xl text-white">
+            <h3 class="header-font neon-text text-xl mb-6 uppercase italic">Product_Editor</h3>
+            <div class="space-y-4 font-bold text-sm">
+                <input type="text" id="prod-name" placeholder="NAMA BARANG" class="w-full bg-black border border-slate-800 p-3 rounded uppercase outline-none focus:dynamic-border">
+                <div class="grid grid-cols-2 gap-4">
+                    <input type="number" id="prod-price" placeholder="HARGA" class="w-full bg-black border border-slate-800 p-3 rounded outline-none focus:dynamic-border">
+                    <input type="number" id="prod-stock" placeholder="STOK" class="w-full bg-black border border-slate-800 p-3 rounded outline-none focus:dynamic-border">
+                </div>
+                <div class="flex flex-col gap-2 pt-4">
+                    <button onclick="handleProductSubmit()" class="dynamic-bg text-white py-3 rounded font-black tracking-widest hover:brightness-110 uppercase">Simpan</button>
+                    <button id="btn-delete" onclick="confirmDeleteProduct()" class="bg-red-600/20 text-red-500 border border-red-600/50 py-2 rounded text-[10px] font-black uppercase hidden">Hapus Permanen</button>
+                    <button onclick="closeModal()" class="bg-slate-900 py-3 rounded text-slate-400 uppercase text-[10px]">Batal</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto no-print">
+        <header class="flex flex-col md:flex-row justify-between items-center mb-8 p-6 glass rounded-2xl border-b-4 dynamic-border shadow-2xl">
+            <div>
+                <h1 class="header-font text-4xl font-black italic neon-text tracking-tighter">RAKA PVC</h1>
+                <p class="text-[10px] font-bold text-slate-500 tracking-[0.3em] uppercase">Omset: <span id="total-revenue" class="text-emerald-400">Rp 0</span></p>
+            </div>
+            <div class="flex flex-col items-end">
+                <div id="jam" class="header-font text-3xl neon-text uppercase">00:00:00</div>
+                <button onclick="openModal('add')" class="mt-2 bg-emerald-600/20 border border-emerald-500 text-emerald-400 text-[10px] px-6 py-2 rounded font-black hover:bg-emerald-500 transition-all uppercase">+ Database</button>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <div class="lg:col-span-7 space-y-6">
+                <input type="text" id="search" placeholder="CARI MATERIAL..." class="w-full bg-black/60 border border-slate-800 p-5 rounded-xl focus:dynamic-border outline-none text-xl font-bold uppercase">
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-4" id="product-list"></div>
+
+                <div class="glass p-6 rounded-2xl border-l-4 border-cyan-500 bg-cyan-950/10">
+                    <h3 class="header-font text-cyan-400 text-xs mb-4 uppercase tracking-widest">📐 Kalkulator Jasa Plafon</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                        <input type="number" id="calc-p" oninput="hitungPlafon()" placeholder="P(m)" class="bg-black border border-slate-800 p-3 rounded font-bold text-white">
+                        <input type="number" id="calc-l" oninput="hitungPlafon()" placeholder="L(m)" class="bg-black border border-slate-800 p-3 rounded font-bold text-white">
+                        <input type="text" id="calc-h" oninput="formatInputTitik(this); hitungPlafon()" value="150.000" class="bg-black border border-slate-800 p-3 rounded font-bold text-cyan-400">
+                        <button onclick="addJasaToCart()" class="bg-cyan-600 hover:bg-cyan-500 text-white font-black rounded text-[10px] uppercase transition-all">Tambah</button>
+                    </div>
+                    <div class="flex justify-between items-center text-xs border-t border-cyan-900/30 pt-4">
+                        <span>Luas: <b id="calc-luas" class="text-cyan-400">0</b> m²</span>
+                        <span>Estimasi: <b id="calc-total-view" class="text-cyan-400 text-lg">Rp 0</b></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-5">
+                <div class="glass p-6 rounded-3xl border-t-2 dynamic-border sticky top-8">
+                    <h2 class="text-[10px] font-black text-slate-500 mb-4 tracking-widest uppercase">Shopping_Cart</h2>
+                    <div id="cart-items" class="space-y-3 min-h-[100px] max-h-[300px] overflow-y-auto mb-6 pr-2"></div>
+                    
+                    <div class="bg-black/60 p-6 rounded-2xl border border-slate-800 space-y-4">
+                        <div class="flex justify-between border-b border-slate-800 pb-2 font-black">
+                            <span class="text-[10px] text-slate-500">TOTAL</span>
+                            <span id="total-price" class="header-font text-3xl neon-text uppercase">0</span>
+                        </div>
+                        <input type="text" id="cash-input" oninput="formatInputTitik(this); hitungKembalian()" placeholder="BAYAR..." class="bg-transparent border-b-2 border-slate-800 w-full text-4xl font-black text-right outline-none focus:dynamic-border text-white">
+                        <div class="flex justify-between text-xs font-bold text-slate-600"><span>KEMBALI:</span><span id="cash-change" class="neon-text uppercase">0</span></div>
+                    </div>
+                    <button onclick="prosesTransaksi()" class="w-full mt-6 dynamic-bg text-white font-black py-5 rounded-xl tracking-[0.4em] uppercase shadow-xl hover:scale-95 transition-transform">Print Struk</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-12 grid grid-cols-1 md:grid-cols-2 gap-8 mb-20">
+            <div class="glass p-6 rounded-2xl">
+                <h3 class="text-xs font-black text-emerald-500 mb-4 uppercase tracking-widest">💰 Penjualan</h3>
+                <div id="sales-history" class="space-y-2 max-h-[300px] overflow-y-auto text-[10px]"></div>
+            </div>
+            <div class="glass p-6 rounded-2xl">
+                <h3 class="text-xs font-black text-blue-500 mb-4 uppercase tracking-widest">📦 Log Stok</h3>
+                <div id="inventory-log" class="space-y-2 max-h-[300px] overflow-y-auto text-[10px]"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="struk" class="print-only">
+        <center>
+            <b style="font-size:16px">RAKA PVC</b><br>
+            <span style="font-size:8px">SOLUSI PLAFON BERKUALITAS</span><br>
+            <span id="struk-waktu" style="font-size:8px"></span>
+        </center>
+        <hr style="border-top:1px dashed #000; margin:5px 0">
+        <div id="struk-items" style="line-height: 1.4"></div>
+        <hr style="border-top:1px dashed #000; margin:5px 0">
+        <div style="display:flex; justify-content:space-between; font-weight:bold">
+            <span>TOTAL</span><span id="struk-total"></span>
+        </div>
+        <div style="display:flex; justify-content:space-between; font-size:9px">
+            <span>BAYAR</span><span id="struk-bayar"></span>
+        </div>
+        <div style="display:flex; justify-content:space-between; font-size:9px">
+            <span>KEMBALI</span><span id="struk-kembali"></span>
+        </div>
+        <hr style="border-top:1px dashed #000; margin:5px 0">
+        <center style="font-size:8px; margin-top:5px">TERIMA KASIH ATAS KUNJUNGAN ANDA</center>
+    </div>
+
+    <script>
+        let products = [
+            { id: 1, name: "PAPAN PVC 4M", price: 185000, stock: 40 },
+            { id: 2, name: "LIS PVC 4M", price: 15000, stock: 100 }
+        ];
+        let cart = [];
+        let totalRevenue = 0;
+        let currentEditId = null;
+
+        function formatNumber(num) { return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, "."); }
+        function parseTitik(str) { return parseInt(str.toString().replace(/\./g, '')) || 0; }
+        function formatInputTitik(input) {
+            let val = input.value.replace(/\D/g, "");
+            input.value = val ? formatNumber(val) : "";
+        }
+
+        function hitungPlafon() {
+            const p = parseFloat(document.getElementById('calc-p').value) || 0;
+            const l = parseFloat(document.getElementById('calc-l').value) || 0;
+            const h = parseTitik(document.getElementById('calc-h').value);
+            const luas = p * l;
+            const total = Math.round(luas * h);
+            document.getElementById('calc-luas').innerText = luas.toFixed(2);
+            document.getElementById('calc-total-view').innerText = "Rp " + formatNumber(total);
+        }
+
+        function addJasaToCart() {
+            const p = document.getElementById('calc-p').value;
+            const l = document.getElementById('calc-l').value;
+            const h = parseTitik(document.getElementById('calc-h').value);
+            const luas = parseFloat(p) * parseFloat(l);
+            const totalJasa = Math.round(luas * h);
+
+            if (!p || !l || luas <= 0) return alert("Isi P & L!");
+
+            // Gunakan Object Baru agar tidak bentrok dengan ID produk
+            cart.push({
+                id: "JASA-" + Date.now(),
+                name: `JASA PASANG (${p}x${l}M)`,
+                price: totalJasa,
+                qty: 1,
+                isJasa: true
+            });
+
+            document.getElementById('calc-p').value = "";
+            document.getElementById('calc-l').value = "";
+            document.getElementById('calc-total-view').innerText = "Rp 0";
+            updateCart();
+        }
+
+        function renderProducts(filter = "") {
+            const list = document.getElementById('product-list');
+            list.innerHTML = "";
+            products.filter(p => p.name.toUpperCase().includes(filter.toUpperCase())).forEach(p => {
+                list.innerHTML += `
+                    <div class="anime-card p-4 relative group">
+                        <button onclick="openModal('edit', ${p.id})" class="absolute top-1 right-1 text-[7px] bg-black px-1 rounded opacity-0 group-hover:opacity-100 uppercase">Edit</button>
+                        <div onclick="addToCart(${p.id})" class="cursor-pointer">
+                            <div class="font-bold text-[10px] h-8 uppercase text-slate-300 leading-tight">${p.name}</div>
+                            <div class="neon-text font-black text-lg">Rp ${formatNumber(p.price)}</div>
+                            <div class="text-[8px] text-slate-600 font-bold uppercase mt-1">Stok: ${p.stock}</div>
+                        </div>
+                    </div>`;
+            });
+        }
+
+        function addToCart(id) {
+            const p = products.find(i => i.id === id);
+            if (p.stock > 0) {
+                const item = cart.find(i => i.id === id);
+                if (item) item.qty++; else cart.push({ ...p, qty: 1 });
+                p.stock--;
+                renderProducts(document.getElementById('search').value); 
+                updateCart();
+            } else alert("Stok Habis!");
+        }
+
+        function updateCart() {
+            const container = document.getElementById('cart-items');
+            container.innerHTML = cart.length === 0 ? '<div class="text-center opacity-20 py-4 uppercase">Kosong</div>' : "";
+            let totalValue = 0;
+            cart.forEach((item, idx) => {
+                totalValue += (item.price * item.qty);
+                container.innerHTML += `
+                    <div class="flex justify-between items-center bg-black/40 p-2 rounded border-l-2 dynamic-border">
+                        <div class="uppercase text-[9px]">
+                            <div class="${item.isJasa ? 'text-cyan-400 font-bold' : ''}">${item.name}</div>
+                            <div class="text-slate-500 font-bold">x${item.qty} @${formatNumber(item.price)}</div>
+                        </div>
+                        <button onclick="removeFromCart(${idx})" class="text-red-500 font-black text-xl">×</button>
+                    </div>`;
+            });
+            document.getElementById('total-price').innerText = formatNumber(totalValue);
+            hitungKembalian();
+        }
+
+        function removeFromCart(idx) {
+            const item = cart[idx];
+            if(!item.isJasa) {
+                const p = products.find(p => p.id === item.id);
+                if(p) p.stock += item.qty;
+            }
+            cart.splice(idx, 1);
+            renderProducts(); updateCart();
+        }
+
+        function hitungKembalian() {
+            const total = parseTitik(document.getElementById('total-price').innerText);
+            const cash = parseTitik(document.getElementById('cash-input').value);
+            document.getElementById('cash-change').innerText = formatNumber(Math.max(0, cash - total));
+        }
+
+        function prosesTransaksi() {
+            const total = parseTitik(document.getElementById('total-price').innerText);
+            const cash = parseTitik(document.getElementById('cash-input').value);
+
+            if (cart.length === 0 || cash < total) return alert("Transaksi Gagal! Cek keranjang/pembayaran.");
+
+            // 1. Update Struk Data
+            document.getElementById('struk-waktu').innerText = new Date().toLocaleString('id-ID');
+            let phtml = "";
+            cart.forEach(i => {
+                phtml += `<div style="display:flex; justify-content:space-between; margin-bottom:2px">
+                    <span style="max-width:70%">${i.name} x${i.qty}</span>
+                    <span>${formatNumber(i.price * i.qty)}</span>
+                </div>`;
+            });
+            document.getElementById('struk-items').innerHTML = phtml;
+            document.getElementById('struk-total').innerText = formatNumber(total);
+            document.getElementById('struk-bayar').innerText = formatNumber(cash);
+            document.getElementById('struk-kembali').innerText = formatNumber(cash - total);
+
+            // 2. Simpan Riwayat Penjualan
+            const salesBody = document.getElementById('sales-history');
+            const summary = cart.map(i => `${i.name}(${i.qty})`).join(", ");
+            salesBody.innerHTML = `<div class="bg-black/40 p-2 border-b border-emerald-900/40 mb-1">
+                <span class="text-emerald-400 font-bold">Rp ${formatNumber(total)}</span> <span class="text-slate-500">[${new Date().toLocaleTimeString()}]</span><br>
+                <span class="text-[8px] text-slate-400 uppercase">${summary}</span>
+            </div>` + salesBody.innerHTML;
+
+            // 3. Log Barang Keluar
+            cart.forEach(i => { if(!i.isJasa) logInventory("KELUAR", i.name, i.qty); });
+
+            // 4. Update Omset
+            totalRevenue += total;
+            document.getElementById('total-revenue').innerText = "Rp " + formatNumber(totalRevenue);
+
+            // 5. Eksekusi Print
+            window.print();
+
+            // 6. Reset Kasir
+            cart = [];
+            document.getElementById('cash-input').value = "";
+            updateCart();
+            renderProducts();
+        }
+
+        function openModal(mode, id = null) {
+            currentEditId = id;
+            document.getElementById('admin-modal').style.display = 'flex';
+            const delBtn = document.getElementById('btn-delete');
+            if(mode === 'edit') {
+                const p = products.find(i => i.id === id);
+                document.getElementById('prod-name').value = p.name;
+                document.getElementById('prod-price').value = p.price;
+                document.getElementById('prod-stock').value = p.stock;
+                delBtn.classList.remove('hidden');
+            } else {
+                document.getElementById('prod-name').value = "";
+                document.getElementById('prod-price').value = "";
+                document.getElementById('prod-stock').value = "";
+                delBtn.classList.add('hidden');
+            }
+        }
+
+        function closeModal() { document.getElementById('admin-modal').style.display = 'none'; }
+
+        function handleProductSubmit() {
+            const name = document.getElementById('prod-name').value.toUpperCase();
+            const price = parseInt(document.getElementById('prod-price').value);
+            const stock = parseInt(document.getElementById('prod-stock').value);
+            if(!name || isNaN(price)) return;
+            if(currentEditId) {
+                const idx = products.findIndex(p => p.id === currentEditId);
+                products[idx] = { ...products[idx], name, price, stock };
+                logInventory("UPDATE", name, stock);
+            } else {
+                products.push({ id: Date.now(), name, price, stock });
+                logInventory("MASUK", name, stock);
+            }
+            renderProducts(); closeModal();
+        }
+
+        function confirmDeleteProduct() {
+            if(confirm("Hapus barang permanen?")) {
+                const p = products.find(i => i.id === currentEditId);
+                logInventory("DELETE", p.name, 0);
+                products = products.filter(p => p.id !== currentEditId);
+                renderProducts(); closeModal();
+            }
+        }
+
+        function logInventory(act, item, qty) {
+            const logBody = document.getElementById('inventory-log');
+            const time = new Date().toLocaleTimeString();
+            logBody.innerHTML = `<div class="border-b border-slate-800/30 pb-1 uppercase">
+                <span class="text-slate-500">[${time}]</span> <span class="text-blue-400">${act}</span>: ${item} (${qty})
+            </div>` + logBody.innerHTML;
+        }
+
+        setInterval(() => { document.getElementById('jam').innerText = new Date().toLocaleTimeString(); }, 1000);
+        document.getElementById('search').addEventListener('input', (e) => renderProducts(e.target.value));
+        renderProducts();
+    </script>
+</body>
+</html>
